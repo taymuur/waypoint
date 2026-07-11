@@ -385,14 +385,21 @@ space-separated RGB triplets in `:root` / `.dark`, e.g. `--primary: 228 87 46;`.
 
 ## 8. Branding: Name & Identity
 
-### Working name: **Waypoint**
+### Working name: **waypoint** (always lowercase)
 
-Waypoint stays for now — it's instantly pronounceable, universally understood, and
+waypoint stays for now — it's instantly pronounceable, universally understood, and
 already describes the product's core object (a stop on a route). Its trade-off is
 crowding: HashiCorp's deployment tool, several travel apps, and generic GPS usage make
 it hard to own in search and trademark. That's a launch-time problem, not a build-time
-one, so the identity below is designed to work for Waypoint today and survive a rename
+one, so the identity below is designed to work for waypoint today and survive a rename
 later (nothing hangs on the literal word).
+
+**Casing rule: `waypoint` is all-lowercase, everywhere — UI, prose, marketing, even at
+the start of a sentence.** Rationale: the wordmark's pin-dot device lives on the
+lowercase "i" (a capital W ruins it); lowercase matches the warm, playful personality;
+and a single invariant form beats a context-dependent one (no "is it Waypoint or
+waypoint here?" drift). Precedent: npm, intercom, twitch. The only exceptions are
+surfaces that mechanically force capitalization (e.g. legal entity names).
 
 - **Wordmark**: lowercase `waypoint` in Bricolage Grotesque ExtraBold, `ink` color; the
   dot of the "i" enlarged and set in `primary` terracotta — a map pin hiding in plain
