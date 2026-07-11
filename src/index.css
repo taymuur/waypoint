@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@theme {
+  /* -- Color: core surfaces & text -- */
+  --color-bg: #faf7f2;
+  --color-surface: #ffffff;
+  --color-sunken: #f1ece2;
+  --color-ink: #20304c;
+  --color-muted: #5c6672;
+  --color-line: #e5dfd3;
+
+  /* -- Color: brand & feedback -- */
+  --color-primary: #e4572e;
+  --color-primary-strong: #c4471f;
+  --color-primary-tint: #fceae2;
+  --color-accent: #2456e6;
+  --color-accent-tint: #e7edfd;
+  --color-positive: #2e9e6b;
+  --color-warning: #e9a13b;
+  --color-danger: #d64545;
+
+  /* -- Color: categories (pins & chips) -- */
+  --color-cat-food: #d6455d;
+  --color-cat-stay: #7a5af8;
+  --color-cat-sight: #2456e6;
+  --color-cat-outdoors: #2e9e6b;
+  --color-cat-transit: #0fa3a3;
+
+  /* -- Typography -- */
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Figtree", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 1rem;
+  --text-base--line-height: 1.55;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 2.375rem;
+  --text-4xl--line-height: 1.12;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1.06;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1.02;
+
+  /* -- Radius -- */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* -- Elevation -- */
+  --shadow-card: 0 1px 2px rgb(32 48 76 / 0.06), 0 4px 12px rgb(32 48 76 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(32 48 76 / 0.08), 0 12px 28px rgb(32 48 76 / 0.12);
+  --shadow-modal: 0 8px 16px rgb(32 48 76 / 0.1), 0 24px 56px rgb(32 48 76 / 0.18);
+
+  /* -- Motion -- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Dark mode (class strategy: <html class="dark">) */
+.dark {
+  --color-bg: #141821;
+  --color-surface: #1c2230;
+  --color-sunken: #10141c;
+  --color-ink: #edeae3;
+  --color-muted: #9aa3b2;
+  --color-line: #2a3244;
+  --color-primary: #f0703f;
+  --color-primary-strong: #e4572e;
+  --color-primary-tint: #3a2418;
+  --color-accent: #5b84f5;
+  --color-accent-tint: #1b2440;
+  --color-positive: #4cc08c;
+  --color-warning: #f2b45c;
+  --color-danger: #e76a6a;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-primary-tint);
+}
+
+/* Entrance: fade in while rising 8px, staggered per item via --enter-delay */
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enter-rise {
+  animation: enter-rise 250ms var(--ease-out-soft) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-rise {
+    animation-duration: 150ms;
+    animation-name: enter-fade;
+    animation-delay: 0ms;
+  }
+  @keyframes enter-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
