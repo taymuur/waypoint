@@ -1,11 +1,21 @@
 import type { CSSProperties } from "react";
-import { trip } from "../data";
+import { trip, type TripDay } from "../data";
 
 const avatarColors = ["bg-cat-stay", "bg-cat-transit", "bg-warning"];
 
-export default function TripSummary() {
+interface Props {
+  days: TripDay[];
+  onReset: () => void;
+}
+
+export default function TripSummary({ days, onReset }: Props) {
+  const stopCount = days.reduce((n, d) => n + d.stops.length, 0);
+
   return (
-    <section className="enter-rise rounded-xl bg-surface p-6 shadow-lift" style={{ "--enter-delay": "0ms" } as CSSProperties}>
+    <section
+      className="enter-rise rounded-xl bg-surface p-6 shadow-lift"
+      style={{ "--enter-delay": "0ms" } as CSSProperties}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">{trip.title}</h1>
@@ -13,7 +23,9 @@ export default function TripSummary() {
             <span className="whitespace-nowrap rounded-full bg-accent-tint px-3 py-1 font-mono text-xs text-accent">
               {trip.dates}
             </span>
-            <span className="text-sm text-muted">6 nights · 2 stops booked</span>
+            <span className="text-sm text-muted">
+              {days.length} days · {stopCount} {stopCount === 1 ? "stop" : "stops"}
+            </span>
           </div>
         </div>
         <div className="flex items-center">
@@ -50,6 +62,13 @@ export default function TripSummary() {
           <p className="mt-1 font-mono text-sm font-semibold tabular-nums">{trip.budget}</p>
         </div>
       </div>
+
+      <button
+        onClick={onReset}
+        className="mt-4 cursor-pointer text-xs font-medium text-muted underline-offset-2 transition-colors duration-150 hover:text-danger hover:underline"
+      >
+        Reset demo data
+      </button>
     </section>
   );
 }

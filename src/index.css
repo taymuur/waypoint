@@ -114,6 +114,37 @@ body {
   animation-delay: var(--enter-delay, 0ms);
 }
 
+/* Map stop pins (MapLibre custom marker elements) */
+.stop-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid #fff;
+  border-radius: 9999px;
+  background: var(--pin-color, var(--color-accent));
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition:
+    box-shadow 150ms var(--ease-out-soft),
+    outline-color 150ms;
+}
+
+.stop-pin.selected {
+  box-shadow: var(--shadow-lift);
+  outline: 4px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+/* soften the raster tiles toward the warm palette */
+.maplibregl-canvas {
+  filter: saturate(0.85) sepia(0.04);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .enter-rise {
     animation-duration: 150ms;
