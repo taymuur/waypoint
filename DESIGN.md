@@ -385,35 +385,36 @@ space-separated RGB triplets in `:root` / `.dark`, e.g. `--primary: 228 87 46;`.
 
 ## 8. Branding: Name & Identity
 
-### Why not "Waypoint"
+### Working name: **Waypoint**
 
-"Waypoint" is descriptive but crowded — it's HashiCorp's deployment tool, several
-existing travel apps, and a generic GPS term. It's hard to own, hard to trademark,
-and reads utilitarian rather than inviting.
+Waypoint stays for now — it's instantly pronounceable, universally understood, and
+already describes the product's core object (a stop on a route). Its trade-off is
+crowding: HashiCorp's deployment tool, several travel apps, and generic GPS usage make
+it hard to own in search and trademark. That's a launch-time problem, not a build-time
+one, so the identity below is designed to work for Waypoint today and survive a rename
+later (nothing hangs on the literal word).
 
-### Recommended: **Jaunt**
-
-A *jaunt* is a short trip taken for pleasure — exactly the product's promise, in five
-letters. It's a real word (no spelling ambiguity), sounds quick and cheerful, verbs
-naturally ("jaunt to Kauai"), and matches the design personality: adventurous, warm,
-playfully organized.
-
-- **Wordmark**: lowercase `jaunt` in Bricolage Grotesque ExtraBold, `ink` color; the
-  title of the "j" replaced with a `primary` terracotta dot — reading as both a map
-  pin-point and a destination.
-- **Mark / favicon**: a rounded route squiggle forming a loose "j", ending in a filled
-  terracotta dot, on a `bg` cream rounded-square tile.
+- **Wordmark**: lowercase `waypoint` in Bricolage Grotesque ExtraBold, `ink` color; the
+  dot of the "i" enlarged and set in `primary` terracotta — a map pin hiding in plain
+  sight.
+- **Mark / favicon**: a rounded route line ending in a filled terracotta dot, on a `bg`
+  cream rounded-square tile. Works as a standalone glyph at 16px.
 - **Tagline directions**: "Every stop, sorted." / "Plan less, go more."
-- **Voice**: first-person-plural, encouraging, concrete. Says "Add your first stop,"
+- **Voice**: encouraging, concrete, second-person. Says "Add your first stop,"
   not "Begin your journey." No wanderlust clichés.
 
-### Runners-up
+### If renaming later — candidates that beat "Jaunt" on pronounceability
+
+Jaunt's weakness is exactly the objection raised: the "au" is ambiguous on the page
+(jont? jawnt?) and it's not a word everyone carries. These alternatives keep the
+personality but read aloud on first sight:
 
 | Name | Angle | Trade-off |
 |---|---|---|
-| **Ramble** | Cozy road-trip energy, verbs well | Can connote aimlessness — fine for leisure, weaker for logistics |
-| **Wayfare** | Elegant, travel-rooted (wayfarer) | Closer to the "way-" crowd you're leaving |
-| **Tripline** | Literal: your trip as a timeline/route line | More descriptive than distinctive |
+| **Tripline** | Your trip as one visible line — matches the timeline + route-line UI exactly; two plain words, zero pronunciation risk | More descriptive than distinctive; check collisions in the travel space |
+| **Stopover** | A real travel word everyone knows; the product literally manages stops | Slightly long; connotes layovers more than road trips |
+| **Hopscotch** | Playful hop-from-stop-to-stop energy, very memorable, matches the numbered-badge timeline | Whimsical — leans consumer/leisure, weaker for a serious-planner positioning |
 
-If "Jaunt" collides in your app-store/domain search, "Ramble" is the fallback with the
-same personality.
+Of the three, **Tripline** is the strongest successor: it clears the "easy to say,
+easy to remember" bar, describes the product's signature visual (the route line
+connecting numbered stops), and keeps the wordmark/pin-dot identity above intact.
