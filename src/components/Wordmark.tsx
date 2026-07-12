@@ -3,7 +3,7 @@
 export default function Wordmark({ className = "text-2xl" }: { className?: string }) {
   return (
     <a
-      href="/"
+      href="#/trips"
       aria-label="waypoint — home"
       className={`font-display font-extrabold tracking-tight text-ink ${className}`}
     >

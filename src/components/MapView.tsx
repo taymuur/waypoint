@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { Stop } from "../data";
 
@@ -35,6 +35,10 @@ function createMap(container: HTMLElement): maplibregl.Map {
   return map;
 }
 
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 interface Props {
   stops: Stop[];
   numbers: Map<string, number>;
@@ -48,8 +52,21 @@ export default function MapView({ stops, numbers, selectedId, addMode, onSelect,
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  /* generation counter: bumping it cancels any in-flight route animation */
+  const genRef = useRef(0);
+  const autoPlayedRef = useRef(false);
   const [loaded, setLoaded] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
+
+  const setLine = useCallback((coords: [number, number][]) => {
+    const source = mapRef.current?.getSource("route") as maplibregl.GeoJSONSource | undefined;
+    source?.setData({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "LineString", coordinates: coords },
+    });
+  }, []);
 
   /* create the map once */
   useEffect(() => {
@@ -81,6 +98,7 @@ export default function MapView({ stops, numbers, selectedId, addMode, onSelect,
     });
     mapRef.current = map;
     return () => {
+      genRef.current++;
       map.remove();
       mapRef.current = null;
     };
@@ -96,50 +114,113 @@ export default function MapView({ stops, numbers, selectedId, addMode, onSelect,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
+  const playRoute = useCallback(async () => {
+    const map = mapRef.current;
+    if (!map || stops.length === 0) return;
+    const gen = ++genRef.current;
+    const pts = stops.map((s) => [s.lng, s.lat] as [number, number]);
+
+    if (reducedMotion() || pts.length < 2) {
+      setLine(pts);
+      return;
+    }
+
+    setPlaying(true);
+    for (const marker of markersRef.current.values()) {
+      marker.getElement().querySelector(".stop-pin")?.classList.add("hidden-pin");
+    }
+    setLine([]);
+
+    const reveal = (i: number) => {
+      const pin = markersRef.current.get(stops[i].id)?.getElement().querySelector(".stop-pin");
+      if (!pin) return;
+      pin.classList.remove("hidden-pin");
+      pin.classList.add("pop");
+      window.setTimeout(() => pin.classList.remove("pop"), 450);
+    };
+
+    reveal(0);
+    const drawn: [number, number][] = [pts[0]];
+    for (let k = 1; k < pts.length; k++) {
+      const [a, b] = [pts[k - 1], pts[k]];
+      await new Promise<void>((resolve) => {
+        const t0 = performance.now();
+        const frame = (t: number) => {
+          if (gen !== genRef.current) return resolve();
+          const p = Math.min(1, (t - t0) / 600);
+          const e = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
+          setLine([...drawn, [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e]]);
+          if (p < 1) requestAnimationFrame(frame);
+          else resolve();
+        };
+        requestAnimationFrame(frame);
+      });
+      if (gen !== genRef.current) break;
+      drawn.push(b);
+      reveal(k);
+    }
+
+    if (gen === genRef.current) {
+      setLine(pts);
+      for (const marker of markersRef.current.values()) {
+        marker.getElement().querySelector(".stop-pin")?.classList.remove("hidden-pin");
+      }
+    }
+    setPlaying(false);
+  }, [stops, setLine]);
+
   /* sync markers + route with the stop list */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !loaded) return;
-
-    const route = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
-    route?.setData({
-      type: "Feature",
-      properties: {},
-      geometry: { type: "LineString", coordinates: stops.map((s) => [s.lng, s.lat]) },
-    });
+    genRef.current++; // cancel any running animation before rebuilding
+    setPlaying(false);
+    setLine(stops.map((s) => [s.lng, s.lat]));
 
     for (const marker of markersRef.current.values()) marker.remove();
     markersRef.current.clear();
 
     for (const s of stops) {
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "stop-pin";
-      el.style.setProperty("--pin-color", catColor[s.category]);
-      el.textContent = String(numbers.get(s.id) ?? "•");
-      el.setAttribute("aria-label", `${s.name} — stop ${numbers.get(s.id)}`);
-      el.addEventListener("click", (e) => {
+      /* outer div is positioned by MapLibre; inner button carries visuals so
+         CSS transforms/animations don't fight the marker's own transform */
+      const wrapper = document.createElement("div");
+      const pin = document.createElement("button");
+      pin.type = "button";
+      pin.className = "stop-pin";
+      pin.style.setProperty("--pin-color", catColor[s.category]);
+      pin.textContent = String(numbers.get(s.id) ?? "•");
+      pin.setAttribute("aria-label", `${s.name} — stop ${numbers.get(s.id)}`);
+      pin.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelect(s.id);
       });
-      const marker = new maplibregl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(map);
+      wrapper.appendChild(pin);
+      const marker = new maplibregl.Marker({ element: wrapper }).setLngLat([s.lng, s.lat]).addTo(map);
       markersRef.current.set(s.id, marker);
     }
-  }, [stops, numbers, loaded, onSelect]);
+
+    /* auto-play the route reveal the first time a trip renders */
+    if (!autoPlayedRef.current && stops.length > 1) {
+      autoPlayedRef.current = true;
+      window.setTimeout(() => void playRoute(), 500);
+    }
+  }, [stops, numbers, loaded, onSelect, setLine, playRoute]);
 
   /* highlight + fly to the selected stop */
   useEffect(() => {
     for (const [id, marker] of markersRef.current) {
-      marker.getElement().classList.toggle("selected", id === selectedId);
+      marker
+        .getElement()
+        .querySelector(".stop-pin")
+        ?.classList.toggle("selected", id === selectedId);
     }
     const map = mapRef.current;
     const stop = stops.find((s) => s.id === selectedId);
     if (map && stop) {
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       map.flyTo({
         center: [stop.lng, stop.lat],
         zoom: Math.max(map.getZoom(), 10.5),
-        duration: reduceMotion ? 0 : 1200,
+        duration: reducedMotion() ? 0 : 1200,
       });
     }
   }, [selectedId, stops]);
@@ -171,6 +252,18 @@ export default function MapView({ stops, numbers, selectedId, addMode, onSelect,
   return (
     <div className="relative h-full min-h-[480px] overflow-hidden rounded-xl shadow-card">
       <div ref={containerRef} className="size-full" />
+      {stops.length > 1 && (
+        <button
+          onClick={() => void playRoute()}
+          disabled={playing}
+          className="absolute left-4 top-4 flex cursor-pointer items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-card transition-[box-shadow,transform] duration-150 ease-out-soft hover:-translate-y-0.5 hover:shadow-lift disabled:cursor-default disabled:opacity-60"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M7 4.5v15l13-7.5-13-7.5z" />
+          </svg>
+          {playing ? "Playing…" : "Play route"}
+        </button>
+      )}
       {addMode && (
         <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
           <span className="enter-rise rounded-full bg-ink px-4 py-2 text-sm font-medium text-white shadow-lift">
