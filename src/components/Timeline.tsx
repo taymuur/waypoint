@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties } from "react";
+import EditStopForm from "./EditStopForm";
 import {
   DndContext,
   PointerSensor,
@@ -34,9 +35,10 @@ interface StopCardProps {
   selected: boolean;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
-function StopCard({ stop, number, selected, onSelect, onRemove }: StopCardProps) {
+function StopCard({ stop, number, selected, onSelect, onRemove, onEdit }: StopCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
   });
@@ -105,6 +107,18 @@ function StopCard({ stop, number, selected, onSelect, onRemove }: StopCardProps)
           </p>
         </div>
         <button
+          aria-label={`Edit ${stop.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(stop.id);
+          }}
+          className="cursor-pointer rounded-full p-2 text-muted opacity-0 transition-[opacity,color] duration-150 hover:bg-sunken hover:text-ink group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+          </svg>
+        </button>
+        <button
           aria-label={`Remove ${stop.name}`}
           onClick={(e) => {
             e.stopPropagation();
@@ -125,12 +139,25 @@ interface TimelineProps {
   days: TripDay[];
   numbers: Map<string, number>;
   selectedId: string | null;
+  editingId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
   onReorder: (dayIndex: number, from: number, to: number) => void;
+  onEdit: (id: string | null) => void;
+  onSaveEdit: (id: string, patch: Partial<Omit<Stop, "id">>) => void;
 }
 
-export default function Timeline({ days, numbers, selectedId, onSelect, onRemove, onReorder }: TimelineProps) {
+export default function Timeline({
+  days,
+  numbers,
+  selectedId,
+  editingId,
+  onSelect,
+  onRemove,
+  onReorder,
+  onEdit,
+  onSaveEdit,
+}: TimelineProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   function handleDragEnd(dayIndex: number) {
@@ -160,16 +187,33 @@ export default function Timeline({ days, numbers, selectedId, onSelect, onRemove
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(dayIndex)}>
               <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                 <ol>
-                  {day.stops.map((stop) => (
-                    <StopCard
-                      key={stop.id}
-                      stop={stop}
-                      number={numbers.get(stop.id) ?? 0}
-                      selected={stop.id === selectedId}
-                      onSelect={onSelect}
-                      onRemove={onRemove}
-                    />
-                  ))}
+                  {day.stops.map((stop) =>
+                    stop.id === editingId ? (
+                      <li key={stop.id} className="relative flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <span className="z-10 flex size-7 items-center justify-center rounded-full bg-accent font-mono text-xs font-semibold text-white">
+                            {numbers.get(stop.id) ?? 0}
+                          </span>
+                          <span className="w-px flex-1 bg-line" aria-hidden="true" />
+                        </div>
+                        <EditStopForm
+                          stop={stop}
+                          onSave={(patch) => onSaveEdit(stop.id, patch)}
+                          onCancel={() => onEdit(null)}
+                        />
+                      </li>
+                    ) : (
+                      <StopCard
+                        key={stop.id}
+                        stop={stop}
+                        number={numbers.get(stop.id) ?? 0}
+                        selected={stop.id === selectedId}
+                        onSelect={onSelect}
+                        onRemove={onRemove}
+                        onEdit={onEdit}
+                      />
+                    ),
+                  )}
                 </ol>
               </SortableContext>
             </DndContext>

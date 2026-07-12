@@ -1,107 +1,151 @@
 import { arrayMove } from "@dnd-kit/sortable";
-import { initialDays, type Category, type Stop, type TripDay } from "./data";
+import { sampleTrip, type Category, type Stop, type Trip } from "./data";
 
-const STORAGE_KEY = "waypoint-trip-v1";
+const STORAGE_KEY = "waypoint-store-v2";
 
-export interface TripState {
-  days: TripDay[];
-  selectedId: string | null;
-  addMode: boolean;
-  /* where the user clicked the map while in add mode; opens the add-stop form */
-  pending: { lng: number; lat: number } | null;
+export interface Store {
+  trips: Trip[];
+  savedIdeas: string[];
 }
 
-export type Action =
-  | { type: "select"; id: string | null }
-  | { type: "remove"; id: string }
-  | { type: "reorder"; dayIndex: number; from: number; to: number }
-  | { type: "toggle-add-mode" }
-  | { type: "place-pin"; lng: number; lat: number }
-  | { type: "cancel-add" }
-  | {
-      type: "add";
-      dayIndex: number;
-      name: string;
-      category: Category;
-      time: string;
-    }
+export interface NewStopInput {
+  name: string;
+  category: Category;
+  time: string;
+  lng: number;
+  lat: number;
+  place?: string;
+  duration?: string;
+}
+
+export type StoreAction =
+  | { type: "create-trip"; id: string; title: string; dates: string; dayCount: number; seedStops?: Omit<Stop, "id">[] }
+  | { type: "delete-trip"; tripId: string }
+  | { type: "rename-trip"; tripId: string; title: string }
+  | { type: "set-dates"; tripId: string; dates: string }
+  | { type: "add-day"; tripId: string }
+  | { type: "add-stop"; tripId: string; dayIndex: number; stop: NewStopInput }
+  | { type: "update-stop"; tripId: string; stopId: string; patch: Partial<Omit<Stop, "id">> }
+  | { type: "remove-stop"; tripId: string; stopId: string }
+  | { type: "reorder-stops"; tripId: string; dayIndex: number; from: number; to: number }
+  | { type: "toggle-saved"; ideaId: string }
   | { type: "reset" };
 
-export function reducer(state: TripState, action: Action): TripState {
+function withTrip(store: Store, tripId: string, fn: (trip: Trip) => Trip): Store {
+  return { ...store, trips: store.trips.map((t) => (t.id === tripId ? fn(t) : t)) };
+}
+
+let uid = 0;
+export function freshId(prefix: string): string {
+  return `${prefix}${Date.now().toString(36)}${(uid++).toString(36)}`;
+}
+
+export function storeReducer(store: Store, action: StoreAction): Store {
   switch (action.type) {
-    case "select":
-      return { ...state, selectedId: action.id };
-    case "remove": {
-      const days = state.days.map((d) => ({
-        ...d,
-        stops: d.stops.filter((s) => s.id !== action.id),
+    case "create-trip": {
+      const days = Array.from({ length: Math.max(1, action.dayCount) }, (_, i) => ({
+        label: `Day ${i + 1}`,
+        date: "",
+        stops: [] as Stop[],
       }));
+      for (const seed of action.seedStops ?? []) {
+        days[0].stops.push({ ...seed, id: freshId("s") });
+      }
+      const trip: Trip = { id: action.id, title: action.title, dates: action.dates, days };
+      return { ...store, trips: [trip, ...store.trips] };
+    }
+    case "delete-trip":
+      return { ...store, trips: store.trips.filter((t) => t.id !== action.tripId) };
+    case "rename-trip":
+      return withTrip(store, action.tripId, (t) => ({ ...t, title: action.title }));
+    case "set-dates":
+      return withTrip(store, action.tripId, (t) => ({ ...t, dates: action.dates }));
+    case "add-day":
+      return withTrip(store, action.tripId, (t) => ({
+        ...t,
+        days: [...t.days, { label: `Day ${t.days.length + 1}`, date: "", stops: [] }],
+      }));
+    case "add-stop":
+      return withTrip(store, action.tripId, (t) => ({
+        ...t,
+        days: t.days.map((d, i) =>
+          i === action.dayIndex
+            ? {
+                ...d,
+                stops: [
+                  ...d.stops,
+                  {
+                    id: freshId("s"),
+                    name: action.stop.name,
+                    place: action.stop.place ?? `${action.stop.lat.toFixed(4)}, ${action.stop.lng.toFixed(4)}`,
+                    time: action.stop.time || "—",
+                    duration: action.stop.duration ?? "new stop",
+                    category: action.stop.category,
+                    lng: action.stop.lng,
+                    lat: action.stop.lat,
+                  },
+                ],
+              }
+            : d,
+        ),
+      }));
+    case "update-stop":
+      return withTrip(store, action.tripId, (t) => ({
+        ...t,
+        days: t.days.map((d) => ({
+          ...d,
+          stops: d.stops.map((s) => (s.id === action.stopId ? { ...s, ...action.patch } : s)),
+        })),
+      }));
+    case "remove-stop":
+      return withTrip(store, action.tripId, (t) => ({
+        ...t,
+        days: t.days.map((d) => ({ ...d, stops: d.stops.filter((s) => s.id !== action.stopId) })),
+      }));
+    case "reorder-stops":
+      return withTrip(store, action.tripId, (t) => ({
+        ...t,
+        days: t.days.map((d, i) =>
+          i === action.dayIndex ? { ...d, stops: arrayMove(d.stops, action.from, action.to) } : d,
+        ),
+      }));
+    case "toggle-saved":
       return {
-        ...state,
-        days,
-        selectedId: state.selectedId === action.id ? null : state.selectedId,
+        ...store,
+        savedIdeas: store.savedIdeas.includes(action.ideaId)
+          ? store.savedIdeas.filter((i) => i !== action.ideaId)
+          : [...store.savedIdeas, action.ideaId],
       };
-    }
-    case "reorder": {
-      const days = state.days.map((d, i) =>
-        i === action.dayIndex
-          ? { ...d, stops: arrayMove(d.stops, action.from, action.to) }
-          : d,
-      );
-      return { ...state, days };
-    }
-    case "toggle-add-mode":
-      return { ...state, addMode: !state.addMode, pending: null };
-    case "place-pin":
-      return { ...state, pending: { lng: action.lng, lat: action.lat } };
-    case "cancel-add":
-      return { ...state, addMode: false, pending: null };
-    case "add": {
-      if (!state.pending) return state;
-      const stop: Stop = {
-        id: `s${Date.now()}`,
-        name: action.name,
-        place: `${state.pending.lat.toFixed(4)}, ${state.pending.lng.toFixed(4)}`,
-        time: action.time || "—",
-        duration: "new stop",
-        category: action.category,
-        lng: state.pending.lng,
-        lat: state.pending.lat,
-      };
-      const days = state.days.map((d, i) =>
-        i === action.dayIndex ? { ...d, stops: [...d.stops, stop] } : d,
-      );
-      return { ...state, days, addMode: false, pending: null, selectedId: stop.id };
-    }
     case "reset":
       localStorage.removeItem(STORAGE_KEY);
-      return { ...initialState(), days: initialDays };
+      return initialStore(true);
   }
 }
 
-export function initialState(): TripState {
-  let days = initialDays;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) days = JSON.parse(raw) as TripDay[];
-  } catch {
-    /* corrupted or unavailable storage — fall back to the sample trip */
+export function initialStore(fresh = false): Store {
+  if (!fresh) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw) as Store;
+    } catch {
+      /* corrupted or unavailable storage — fall back to the sample trip */
+    }
   }
-  return { days, selectedId: null, addMode: false, pending: null };
+  return { trips: [sampleTrip], savedIdeas: [] };
 }
 
-export function persist(days: TripDay[]) {
+export function persist(store: Store) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   } catch {
     /* storage full or blocked — the app still works, just without persistence */
   }
 }
 
 /* Global stop numbering: 1..n across all days, shared by timeline and map. */
-export function stopNumbers(days: TripDay[]): Map<string, number> {
+export function stopNumbers(trip: Trip): Map<string, number> {
   const numbers = new Map<string, number>();
   let n = 1;
-  for (const day of days) for (const stop of day.stops) numbers.set(stop.id, n++);
+  for (const day of trip.days) for (const stop of day.stops) numbers.set(stop.id, n++);
   return numbers;
 }
