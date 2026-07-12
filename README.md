@@ -17,3 +17,11 @@ npm install
 npm run dev      # local dev server
 npm run build    # typecheck + production build
 ```
+
+## Live site
+
+Every merge to `main` auto-deploys to **https://taymuur.github.io/waypoint/** via
+GitHub Actions (`.github/workflows/deploy.yml`).
+
+One-time setup (repo owner): GitHub → Settings → Pages → "Build and deployment" →
+set **Source** to **GitHub Actions**. That's it — the next merge to `main` publishes.

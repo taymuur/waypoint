@@ -1,15 +1,14 @@
 export type Category = "food" | "stay" | "sight" | "outdoors" | "transit";
 
 export interface Stop {
-  id: number;
+  id: string;
   name: string;
   place: string;
   time: string;
   duration: string;
   category: Category;
-  /* position on the placeholder map, in SVG viewBox units */
-  x: number;
-  y: number;
+  lng: number;
+  lat: number;
 }
 
 export interface TripDay {
@@ -27,50 +26,50 @@ export const trip = {
   reservations: { flights: 2, lodging: 3, rentals: 1 },
 };
 
-export const days: TripDay[] = [
+export const initialDays: TripDay[] = [
   {
     label: "Day 1",
     date: "Thu, Jun 12",
     stops: [
       {
-        id: 1,
+        id: "s1",
         name: "Arrive PDX",
         place: "Portland, OR",
         time: "9:40 AM",
         duration: "pickup 45 min",
         category: "transit",
-        x: 300,
-        y: 80,
+        lng: -122.5951,
+        lat: 45.5898,
       },
       {
-        id: 2,
+        id: "s2",
         name: "Food cart lunch",
         place: "Portland, OR",
         time: "12:15 PM",
         duration: "avg visit 1 hr",
         category: "food",
-        x: 268,
-        y: 108,
+        lng: -122.6742,
+        lat: 45.5202,
       },
       {
-        id: 3,
+        id: "s3",
         name: "Cannon Beach",
         place: "Cannon Beach, OR",
         time: "3:30 PM",
         duration: "avg visit 2–3 hr",
         category: "outdoors",
-        x: 128,
-        y: 130,
+        lng: -123.9615,
+        lat: 45.8918,
       },
       {
-        id: 4,
-        name: "Surfsand cabin",
+        id: "s4",
+        name: "Beachfront cabin",
         place: "Cannon Beach, OR",
         time: "6:00 PM",
         duration: "2 nights",
         category: "stay",
-        x: 122,
-        y: 158,
+        lng: -123.963,
+        lat: 45.889,
       },
     ],
   },
@@ -79,34 +78,34 @@ export const days: TripDay[] = [
     date: "Fri, Jun 13",
     stops: [
       {
-        id: 5,
+        id: "s5",
         name: "Ecola State Park",
         place: "Cannon Beach, OR",
         time: "9:00 AM",
         duration: "avg visit 3–4 hr",
         category: "outdoors",
-        x: 108,
-        y: 196,
+        lng: -123.974,
+        lat: 45.919,
       },
       {
-        id: 6,
+        id: "s6",
         name: "Haystack Rock lookout",
         place: "Cannon Beach, OR",
         time: "2:00 PM",
         duration: "avg visit 1 hr",
         category: "sight",
-        x: 140,
-        y: 232,
+        lng: -123.9685,
+        lat: 45.8841,
       },
       {
-        id: 7,
+        id: "s7",
         name: "Chowder on the wharf",
         place: "Garibaldi, OR",
         time: "6:30 PM",
         duration: "reservation",
         category: "food",
-        x: 176,
-        y: 268,
+        lng: -123.911,
+        lat: 45.5595,
       },
     ],
   },
